@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Fútbol Pro - Local vs Visitante</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; max-width: 650px; margin: 20px auto; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-radius: 8px; background: white; }
+        h1 { text-align: center; color: #2c3e50; font-size: 24px; margin-bottom: 5px; }
+        .grid-equipos { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        .col-equipo { background: #f9f9f9; padding: 15px; border-radius: 6px; border: 1px solid #e0e0e0; }
+        .col-equipo.local { border-top: 4px solid #3498db; }
+        .col-equipo.visitante { border-top: 4px solid #e74c3c; }
+        h2 { font-size: 16px; margin-top: 0; color: #2c3e50; text-align: center; }
+        .input-group { margin-bottom: 12px; }
+        label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 4px; color: #555; }
+        input { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 15px; }
+        button { width: 100%; padding: 12px; background-color: #27ae60; color: white; border: none; border-radius: 4px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        button:hover { background-color: #219653; }
+        .resultados { margin-top: 25px; padding: 15px; background: #eef2f3; border-radius: 6px; display: none; }
+        h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #bdc3c7; padding-bottom: 5px; font-size: 16px; }
+        ul { list-style: none; padding: 0; margin: 0 0 15px 0; }
+        li { padding: 6px 0; border-bottom: 1px dashed #ccc; font-size: 14px; }
+        .destacado { background: #fff; padding: 10px; border-left: 4px solid #27ae60; font-weight: bold; margin-bottom: 15px; font-size: 15px; }
+        .anuncio-placeholder { width: 100%; height: 90px; background: #ddd; margin: 15px 0; display: flex; align-items: center; justify-content: center; color: #777; font-size: 11px; border: 1px dashed #999; }
+    </style>
+</head>
+<body>
+
+    <h1>⚽ Calculadora de Fútbol Local vs Visitante</h1>
+    <p style="text-align: center; font-size: 13px; color: #777; margin: 0;">Predicciones avanzadas usando Distribución de Poisson</p>
+
+    <div class="anuncio-placeholder">[Espacio para Anuncio publicitario (Banner)]</div>
+
+    <div class="grid-equipos">
+        <!-- DATOS DEL LOCAL -->
+        <div class="col-equipo local">
+            <h2>🏠 Equipo LOCAL</h2>
+            <div class="input-group">
+                <label for="golesFavorLocal">Goles a favor (Promedio de Local):</label>
+                <input type="number" id="golesFavorLocal" step="0.01" placeholder="Ej: 1.50">
+            </div>
+            <div class="input-group">
+                <label for="cornersFavorLocal">Corners a favor (Promedio de Local):</label>
+                <input type="number" id="cornersFavorLocal" step="0.01" placeholder="Ej: 5.20">
+            </div>
+        </div>
+
+        <!-- DATOS DEL VISITANTE -->
+        <div class="col-equipo visitante">
+            <h2>🚀 Equipo VISITANTE</h2>
+            <div class="input-group">
+                <label for="golesContraVisita">Goles en contra (Promedio de Visita):</label>
+                <input type="number" id="golesContraVisita" step="0.01" placeholder="Ej: 1.10">
+            </div>
+            <div class="input-group">
+                <label for="cornersContraVisita">Corners en contra (Promedio de Visita):</label>
+                <input type="number" id="cornersContraVisita" step="0.01" placeholder="Ej: 4.80">
+            </div>
+        </div>
+    </div>
+
+    <button onclick="calcularPoissonAvanzado()">Calcular Predicción H2H</button>
+
+    <div id="resultados" class="resultados">
+        <div class="destacado" id="resultadoExacto"></div>
+
+        <h3>📊 Probabilidades de Goles Totales</h3>
+        <ul id="listaGoles"></ul>
+
+        <h3>📐 Probabilidades de Corners Totales</h3>
+        <ul id="listaCorners"></ul>
+    </div>
+
+    <div class="anuncio-placeholder">[Espacio para Anuncio publicitario]</div>
+
+    <script>
+        function factorial(n) {
+            if (n === 0 || n === 1) return 1;
+            let res = 1;
+            for (let i = 2; i <= n; i++) res *= i;
+            return res;
+        }
+
+        function poisson(k, lambda) {
+            return (Math.pow(lambda, k) * Math.exp(-lambda)) / factorial(k);
+        }
+
+        function calcularPoissonAvanzado() {
+            // Captura de datos de la interfaz
+            const gFavorLocal = parseFloat(document.getElementById('golesFavorLocal').value);
+            const gContraVisita = parseFloat(document.getElementById('golesContraVisita').value);
+            const cFavorLocal = parseFloat(document.getElementById('cornersFavorLocal').value);
+            const cContraVisita = parseFloat(document.getElementById('cornersContraVisita').value);
+
+            if (isNaN(gFavorLocal) || isNaN(gContraVisita) || isNaN(cFavorLocal) || isNaN(cContraVisita)) {
+                alert("Por favor, completá todos los campos con números válidos.");
+                return;
+            }
+
+            // El algoritmo calcula las medias combinadas (Lambda)
+            const lambdaGolesPartido = (gFavorLocal + gContraVisita) / 2;
+            const lambdaCornersPartido = cFavorLocal + cContraVisita; // Los corners se suman directamente
+
+            // 1. Calcular Resultado de Goles más probable
+            let maxProbGol = 0;
+            let golesExactosMasProbables = 0;
+            let htmlGoles = "";
+
+            for (let k = 0; k <= 4; k++) {
+                let prob = poisson(k, lambdaGolesPartido);
+                if (k === 4) {
+                    let sumaAnteriores = 0;
+                    for (let j = 0; j < 4; j++) sumaAnteriores += poisson(j, lambdaGolesPartido);
+                    prob = 1 - sumaAnteriores;
+                }
+                
+                if (prob > maxProbGol) {
+                    maxProbGol = prob;
+                    golesExactosMasProbables = k;
+                }
+
+                let texto = k === 4 ? "4 o más goles" : `${k} goles en total`;
+                htmlGoles += `<li><strong>${texto}:</strong> ${(prob * 100).toFixed(2)}%</li>`;
+            }
+            document.getElementById('listaGoles').innerHTML = htmlGoles;
+
+            // 2. Calcular Corners
+            let htmlCorners = "";
+            let baseCorners = Math.floor(lambdaCornersPartido);
+            for (let k = baseCorners - 2; k <= baseCorners + 3; k++) {
+                if (k < 0) continue;
+                let prob = (poisson(k, lambdaCornersPartido) * 100).toFixed(2);
+                htmlCorners += `<li><strong>${k} corners exactos:</strong> ${prob}%</li>`;
+            }
+            document.getElementById('listaCorners').innerHTML = htmlCorners;
+
+            // 3. Mostrar Sugerencia del Sistema
+            document.getElementById('resultadoExacto').innerHTML = 
+                `🎯 Pronóstico del Sistema: La mayor probabilidad matemática se concentra en un partido de ${golesExactosMasProbables} goles y aproximadamente ${baseCorners} corners en total.`;
+
+            document.getElementById('resultados').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
+
